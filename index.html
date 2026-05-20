@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我猜我猜我猜猜猜 🎁</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink: #e040a0;
+    --purple: #7c4dff;
+    --yellow: #ffca28;
+    --mint: #4db6ac;
+    --peach: #ff8a65;
+    --bg: #fff9fe;
+    --card-bg: #fff0fb;
+    --border: #f48fb1;
+    --text-main: #3a0060;
+    --text-muted: #ab47bc;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 20%, #fce4ec 0%, transparent 35%),
+      radial-gradient(circle at 85% 10%, #ede7f6 0%, transparent 35%),
+      radial-gradient(circle at 50% 90%, #e8f5e9 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, #fff8e1 0%, transparent 35%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .deco-dots {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.18;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  /* HEADER */
+  .game-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: clamp(28px, 7vw, 42px);
+    text-align: center;
+    color: var(--pink);
+    letter-spacing: 6px;
+    text-shadow: 3px 3px 0 #fce4ec, 1px 1px 0 #f06292;
+    margin-bottom: 6px;
+  }
+  .game-subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 1.8rem;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    background: #f3e5f5;
+    border-radius: 99px;
+    height: 10px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e040a0, #7c4dff, #40c4ff);
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  /* CARD */
+  .riddle-card {
+    background: var(--card-bg);
+    border: 2.5px solid var(--border);
+    border-radius: 24px;
+    padding: 2rem 1.75rem 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(224,64,160,0.08), 0 1px 4px rgba(224,64,160,0.06);
+    transition: transform 0.3s ease;
+  }
+
+  .q-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--pink);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 18px;
+    border-radius: 99px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(224,64,160,0.3);
+  }
+
+  .riddle-tag {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--purple);
+    background: #ede7f6;
+    padding: 3px 12px;
+    border-radius: 99px;
+    margin-bottom: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .riddle-text {
+    font-size: 17px;
+    line-height: 1.9;
+    color: var(--text-main);
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  .riddle-source {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* HEARTS */
+  .hearts {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .heart { font-size: 22px; transition: all 0.3s ease; }
+  .hearts-label { font-size: 12px; color: var(--text-muted); }
+
+  /* INPUT AREA */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .answer-input {
+    flex: 1;
+    font-size: 15px;
+    font-family: 'Noto Sans SC', sans-serif;
+    padding: 12px 18px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    outline: none;
+    background: white;
+    color: var(--text-main);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .answer-input:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(224,64,160,0.12);
+  }
+  .answer-input:disabled { background: #f5f5f5; color: #aaa; }
+
+  .submit-btn {
+    background: var(--pink);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 22px;
+    font-size: 15px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    box-shadow: 0 3px 12px rgba(224,64,160,0.3);
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(224,64,160,0.35); }
+  .submit-btn:active { transform: scale(0.97); }
+  .submit-btn:disabled { background: #ccc; box-shadow: none; cursor: default; transform: none; }
+
+  /* FEEDBACK */
+  .feedback {
+    min-height: 40px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: none;
+    line-height: 1.5;
+  }
+  .feedback.error { background: #fce4ec; color: #c62828; }
+  .feedback.info { background: #e8f5e9; color: #2e7d32; }
+
+  .next-btn-wrap { text-align: center; margin-top: 14px; display: none; }
+  .next-btn {
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 11px 32px;
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(124,77,255,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .next-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(124,77,255,0.35); }
+
+  /* SUCCESS SCREEN */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 1.5rem 1rem 1rem;
+    animation: fadeSlideUp 0.5s ease forwards;
+  }
+  .gift-emoji {
+    font-size: 56px;
+    margin-bottom: 1rem;
+    display: block;
+    animation: popBounce 0.6s cubic-bezier(.36,.07,.19,.97) forwards;
+  }
+  .success-msg {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--pink);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .success-msg span { color: var(--purple); }
+  .gift-label {
+    display: inline-block;
+    font-size: 16px;
+    color: #6a1b9a;
+    background: #f3e5f5;
+    border: 1.5px solid #ce93d8;
+    border-radius: 16px;
+    padding: 10px 24px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  .continue-btn {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 32px;
+    font-size: 15px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(124,77,255,0.3);
+    transition: transform 0.15s;
+  }
+  .continue-btn:hover { transform: translateY(-2px); }
+
+  /* END SCREEN */
+  .end-screen {
+    display: none;
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    animation: fadeSlideUp 0.5s ease forwards;
+  }
+  .cake-emoji { font-size: 60px; display: block; margin-bottom: 1rem; animation: popBounce 0.6s ease forwards; }
+  .end-title { font-family: 'Ma Shan Zheng', cursive; font-size: 32px; color: var(--pink); margin-bottom: 10px; letter-spacing: 4px; }
+  .end-msg { font-size: 14px; color: var(--text-muted); line-height: 2; }
+
+  /* CONFETTI */
+  .confetti-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+  }
+
+  /* ANIMATIONS */
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+  @keyframes popBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    80% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes floatDot {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(180deg); }
+  }
+
+  .shake { animation: shake 0.5s ease; }
+</style>
+</head>
+<body>
+
+<div class="deco-dots" id="deco-dots"></div>
+<div class="confetti-container" id="confetti-container"></div>
+
+<div id="app">
+  <h1 class="game-title">我猜我猜我猜猜猜</h1>
+  <p class="game-subtitle">共 <span id="total-count"></span> 道谜题，抽到了就要猜哦 ✨</p>
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <div id="card-screen">
+    <div class="riddle-card" id="riddle-card">
+      <div class="q-badge">第 <span id="q-num"></span> 题 / 共 <span id="q-total"></span> 题</div>
+      <div class="riddle-tag" id="riddle-tag"></div>
+      <div class="riddle-text" id="riddle-text"></div>
+      <div class="riddle-source" id="riddle-source"></div>
+    </div>
+
+    <div class="hearts">
+      <span class="heart" id="heart1">❤️</span>
+      <span class="heart" id="heart2">❤️</span>
+      <span class="hearts-label">剩余机会</span>
+    </div>
+
+    <div class="input-row">
+      <input class="answer-input" id="answer-input" type="text" placeholder="在这里输入谜底..." autocomplete="off" />
+      <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">提交</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="next-btn-wrap" id="next-btn-wrap">
+      <button class="next-btn" onclick="nextQuestion()">下一题 →</button>
+    </div>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <span class="gift-emoji">🎁</span>
+    <div class="success-msg">恭喜获得<br><span>滕瑜晗</span>精心准备的礼物一份！</div>
+    <div class="gift-label" id="gift-reveal"></div>
+    <br>
+    <button class="continue-btn" onclick="nextQuestion()">继续下一题 🎉</button>
+  </div>
+
+  <div class="end-screen" id="end-screen">
+    <span class="cake-emoji">🎂</span>
+    <div class="end-title">生日快乐！</div>
+    <p class="end-msg">所有礼物都猜完啦～<br>快去找滕瑜晗领你的生日礼物吧 🎁</p>
+  </div>
+</div>
+
+<script>
+const riddles = [
+  { text: "眼睛是心灵的窗户——但这扇窗要防水。", source: "——改编自达·芬奇名言", tag: "名言改编", answer: "泳镜", gift: "🥽 泳镜" },
+  { text: "紫微斗数批曰：命主今岁水局旺盛，宜以器护目，方可洞察玄机。", source: "——伪装版玄学批文", tag: "玄学专区", answer: "泳镜", gift: "🥽 泳镜" },
+  { text: "你不知道什么是汪洋，直到你身处其中，然后那里就是你的家了。", source: "——艾米丽·狄金森《你不知道什么是汪洋》", tag: "诗歌", answer: "游泳包", gift: "🎒 游泳包" },
+  { text: "生活不止眼前的苟且，还有诗和远方——以及换洗衣物。", source: "——改编自高晓松", tag: "金句改编", answer: "游泳包", gift: "🎒 游泳包" },
+  { text: "开荒南野际，守拙归园田。", source: "——陶渊明《归园田居》", tag: "古诗词", answer: "园艺工具", gift: "🌿 园艺工具套装" },
+  { text: "种豆南山下，草盛豆苗稀。", source: "——陶渊明《归园田居·其三》", tag: "古诗词", answer: "园艺工具", gift: "🌿 园艺工具套装" },
+  { text: "剪不断，理还乱。", source: "——李煜《相见欢》", tag: "古诗词", answer: "花艺剪刀", gift: "✂️ 花艺剪刀" },
+  { text: "Cutting people out of your life is fine. Cutting flowers is better.", source: "——改编自《破产姐妹》Max毒舌风格", tag: "美剧改编", answer: "花艺剪刀", gift: "✂️ 花艺剪刀" },
+];
+
+const confettiColors = ["#e040a0","#7c4dff","#ffca28","#40c4ff","#69f0ae","#ff6e40","#ea80fc","#f06292","#4db6ac"];
+const shapes = ["circle","square","triangle"];
+let currentIndex = 0;
+let attemptsLeft = 2;
+let shuffled = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function createDecoDots() {
+  const container = document.getElementById("deco-dots");
+  const sizes = [12,18,24,14,20,10,16,22,8,26];
+  const colors = ["#fce4ec","#ede7f6","#e8f5e9","#fff8e1","#e3f2fd","#fce4ec","#f3e5f5","#e0f7fa","#fff3e0","#fafafa"];
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement("div");
+    el.className = "dot";
+    const size = sizes[i % sizes.length];
+    el.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      background: ${colors[i % colors.length]};
+      top: ${Math.random()*100}%;
+      left: ${Math.random()*100}%;
+      animation: floatDot ${4+Math.random()*5}s ${Math.random()*3}s ease-in-out infinite;
+    `;
+    container.appendChild(el);
+  }
+}
+
+function spawnConfetti(count = 60) {
+  const container = document.getElementById("confetti-container");
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    const size = 7 + Math.random() * 9;
+    const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    const isCircle = Math.random() > 0.5;
+    el.style.cssText = `
+      left: ${Math.random()*100}%;
+      top: -10px;
+      width: ${size}px;
+      height: ${isCircle ? size : size * (0.4 + Math.random()*0.8)}px;
+      background: ${color};
+      border-radius: ${isCircle ? "50%" : Math.random()>0.5 ? "2px" : "0"};
+      animation-delay: ${Math.random()*1.2}s;
+      animation-duration: ${2+Math.random()*2}s;
+    `;
+    container.appendChild(el);
+  }
+  setTimeout(() => { container.innerHTML = ""; }, 4500);
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById("feedback");
+  el.style.display = "block";
+  el.textContent = msg;
+  el.className = "feedback " + type;
+  if (type === "error") {
+    el.classList.add("shake");
+    setTimeout(() => el.classList.remove("shake"), 600);
+  }
+}
+
+function loadQuestion() {
+  const q = shuffled[currentIndex];
+  attemptsLeft = 2;
+
+  document.getElementById("q-num").textContent = currentIndex + 1;
+  document.getElementById("q-total").textContent = shuffled.length;
+  document.getElementById("riddle-tag").textContent = q.tag;
+  document.getElementById("riddle-text").textContent = q.text;
+  document.getElementById("riddle-source").textContent = q.source;
+  document.getElementById("answer-input").value = "";
+  document.getElementById("answer-input").disabled = false;
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("feedback").style.display = "none";
+  document.getElementById("next-btn-wrap").style.display = "none";
+  document.getElementById("heart1").textContent = "❤️";
+  document.getElementById("heart2").textContent = "❤️";
+
+  updateProgress();
+
+  document.getElementById("card-screen").style.display = "block";
+  document.getElementById("success-screen").style.display = "none";
+  document.getElementById("end-screen").style.display = "none";
+
+  setTimeout(() => document.getElementById("answer-input").focus(), 100);
+}
+
+function updateProgress() {
+  const pct = (currentIndex / shuffled.length) * 100;
+  document.getElementById("progress-bar").style.width = pct + "%";
+}
+
+function normalize(s) {
+  return s.trim().replace(/\s+/g, "").toLowerCase()
+    .replace(/工具套装|套装/g, "工具")
+    .replace(/花剪|花艺剪|剪花刀/g, "花艺剪刀");
+}
+
+function isCorrect(userAnswer, correctAnswer) {
+  const u = normalize(userAnswer);
+  const c = normalize(correctAnswer);
+  return u === c || u.includes(c) || c.includes(u);
+}
+
+function submitAnswer() {
+  const input = document.getElementById("answer-input");
+  const userAnswer = input.value;
+  if (!userAnswer.trim()) return;
+
+  const q = shuffled[currentIndex];
+
+  if (isCorrect(userAnswer, q.answer)) {
+    spawnConfetti();
+    document.getElementById("card-screen").style.display = "none";
+    const ss = document.getElementById("success-screen");
+    ss.style.display = "block";
+    ss.style.animation = "none";
+    void ss.offsetWidth;
+    ss.style.animation = "fadeSlideUp 0.5s ease forwards";
+    const giftEmoji = ss.querySelector(".gift-emoji");
+    giftEmoji.style.animation = "none";
+    void giftEmoji.offsetWidth;
+    giftEmoji.style.animation = "popBounce 0.6s cubic-bezier(.36,.07,.19,.97) forwards";
+    document.getElementById("gift-reveal").textContent = q.gift;
+  } else {
+    attemptsLeft--;
+    if (attemptsLeft === 1) {
+      document.getElementById("heart2").textContent = "🖤";
+      showFeedback("啊哦，谜底错误，请再试一次！", "error");
+      input.value = "";
+      input.focus();
+    } else {
+      document.getElementById("heart1").textContent = "🖤";
+      showFeedback("答案是：" + q.answer + " ～ 下次一定！", "error");
+      document.getElementById("submit-btn").disabled = true;
+      document.getElementById("answer-input").disabled = true;
+      document.getElementById("next-btn-wrap").style.display = "block";
+    }
+  }
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= shuffled.length) {
+    document.getElementById("card-screen").style.display = "none";
+    document.getElementById("success-screen").style.display = "none";
+    const es = document.getElementById("end-screen");
+    es.style.display = "block";
+    es.style.animation = "none";
+    void es.offsetWidth;
+    es.style.animation = "fadeSlideUp 0.5s ease forwards";
+    const cake = es.querySelector(".cake-emoji");
+    cake.style.animation = "none";
+    void cake.offsetWidth;
+    cake.style.animation = "popBounce 0.6s ease forwards";
+    document.getElementById("progress-bar").style.width = "100%";
+    spawnConfetti(80);
+    setTimeout(() => spawnConfetti(40), 1800);
+  } else {
+    loadQuestion();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  createDecoDots();
+  shuffled = shuffle(riddles);
+  document.getElementById("total-count").textContent = shuffled.length;
+  loadQuestion();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    if (document.getElementById("card-screen").style.display !== "none" &&
+        !document.getElementById("submit-btn").disabled) {
+      submitAnswer();
+    }
+  }
+});
+</script>
+</body>
+</html>
